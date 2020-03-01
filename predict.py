@@ -46,9 +46,12 @@ def predict_n_days(n, df):
     return forecast
 
 
-def generate_map(df):
+def generate_map(df, curr=False):
     newDF = df.copy()
-    dates = newDF.columns[4:]
+    if curr:
+        dates = newDf.columns[4:]
+    else:
+        dates = newDF.columns[3:]
     df2 = pd.DataFrame(columns=['Place', 'Lat', 'Long', 'Date', 'Size', 'Text', 'Color'])
     for place in newDF["Location"].unique():
         for date in dates:
@@ -116,6 +119,7 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
+            print('confirmed, ' + str(len(forecast)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_c.html')
     elif ref_type == 'deaths':
@@ -136,6 +140,7 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
+            print('deaths, ' + str(len(forecast)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_d.html')
     elif ref_type == 'recovered':
@@ -156,8 +161,18 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
+            print('recovered, ' + str(len(forecast)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_r.html')
+    elif ref_type == 'curr_confirmed':
+        fig = generate_map(confirmed, curr=True)
+        fig.write_html('templates/curr_c.html')
+    elif ref_type == 'curr_deaths':
+        fig = generate_map(deaths, curr=True)
+        fig.write_html('templates/curr_d.html')
+    elif ref_type == 'curr_recovered':
+        fig = generate_map(recovered, curr=True)
+        fig.write_html('templates/curr_r.html')
 
 
 # from https://stackoverflow.com/questions/11130156/suppress-stdout-stderr-print-from-python-functions

@@ -47,6 +47,12 @@ def refresh_predictions():
     thread2.start()
     thread3 = threading.Thread(target=predict.refresh, args=('recovered',))
     thread3.start()
+    thread4 = threading.Thread(target=predict.refresh, args=('curr_confirmed',))
+    thread4.start()
+    thread5 = threading.Thread(target=predict.refresh, args=('curr_deaths',))
+    thread5.start()
+    thread6 = threading.Thread(target=predict.refresh, args=('curr_recovered',))
+    thread6.start()
     return "Successfully started refreshing data and predictions."
 
 
