@@ -49,7 +49,7 @@ def predict_n_days(n, df):
 def generate_map(df, curr=False):
     newDF = df.copy()
     if curr:
-        dates = newDf.columns[4:]
+        dates = newDF.columns[4:]
     else:
         dates = newDF.columns[3:]
     df2 = pd.DataFrame(columns=['Place', 'Lat', 'Long', 'Date', 'Size', 'Text', 'Color'])
@@ -106,9 +106,9 @@ def refresh(ref_type):
 
     if ref_type == 'confirmed':
         for (location, df) in conf.items():
-            forecast = predict_n_days(28, df)
-            forecast[['ds', 'yhat']][-28:]
-            forecast = forecast[['ds', 'yhat']][-28:].T
+            forecast = predict_n_days(14, df)
+            forecast[['ds', 'yhat']][-14:]
+            forecast = forecast[['ds', 'yhat']][-14:].T
             forecast.columns = map(lambda t: t.strftime('%-m/%-d/%y'), forecast.iloc[0])
             forecast = forecast.drop(forecast.index[0])
             forecast.insert(0, 'Location', location)
@@ -124,9 +124,9 @@ def refresh(ref_type):
         fig.write_html('templates/fig_c.html')
     elif ref_type == 'deaths':
         for (location, df) in death.items():
-            forecast = predict_n_days(28, df)
-            forecast[['ds', 'yhat']][-28:]
-            forecast = forecast[['ds', 'yhat']][-28:].T
+            forecast = predict_n_days(14, df)
+            forecast[['ds', 'yhat']][-14:]
+            forecast = forecast[['ds', 'yhat']][-14:].T
             forecast.columns = map(lambda t: t.strftime(
                 '%-m/%-d/%y'), forecast.iloc[0])
             forecast = forecast.drop(forecast.index[0])
@@ -145,9 +145,9 @@ def refresh(ref_type):
         fig.write_html('templates/fig_d.html')
     elif ref_type == 'recovered':
         for (location, df) in recs.items():
-            forecast = predict_n_days(28, df)
-            forecast[['ds', 'yhat']][-28:]
-            forecast = forecast[['ds', 'yhat']][-28:].T
+            forecast = predict_n_days(14, df)
+            forecast[['ds', 'yhat']][-14:]
+            forecast = forecast[['ds', 'yhat']][-14:].T
             forecast.columns = map(lambda t: t.strftime(
                 '%-m/%-d/%y'), forecast.iloc[0])
             forecast = forecast.drop(forecast.index[0])
