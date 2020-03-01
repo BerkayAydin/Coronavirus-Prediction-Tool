@@ -6,14 +6,21 @@ import plotly.express as px
 import os
 from datetime import datetime
 
+c_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv'
+d_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv'
+r_url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv'
 
-def prepare_data():
-    confirmed = pd.read_csv('time_series_19-covid-Confirmed.csv')
-    deaths = pd.read_csv('time_series_19-covid-Deaths.csv')
-    recovered = pd.read_csv('time_series_19-covid-Recovered.csv')
+def prepare_data(confirmed, deaths, recovered):
+    # confirmed = pd.read_csv(c_url)
+    # deaths = pd.read_csv(d_url)
+    # recovered = pd.read_csv(r_url)
 
-    for df in [confirmed, deaths, recovered]:
-        df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
+    # # confirmed = pd.read_csv('time_series_19-covid-Confirmed.csv')
+    # # deaths = pd.read_csv('time_series_19-covid-Deaths.csv')
+    # # recovered = pd.read_csv('time_series_19-covid-Recovered.csv')
+
+    # for df in [confirmed, deaths, recovered]:
+    #     df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
 
     confs = {}
     death = {}
@@ -93,6 +100,37 @@ def generate_map(df):
     return fig
 
 
+def refresh():
+    confirmed = pd.read_csv(c_url)
+    deaths = pd.read_csv(d_url)
+    recovered = pd.read_csv(r_url)
+
+    for df in [confirmed, deaths, recovered]:
+        df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
+
+    (conf, death, recs) = prepare_data(confirmed, deaths, recovered)
+    fs = pd.DataFrame()
+
+    for (location, df) in conf.items():
+        forecast = predict_n_days(7, df)
+        forecast[['ds', 'yhat']][-7:]
+        forecast = forecast[['ds', 'yhat']][-7:].T
+        forecast.columns = map(lambda t: t.strftime('%-m/%-d/%y'), forecast.iloc[0])
+        forecast = forecast.drop(forecast.index[0])
+        forecast.insert(0, 'Location', location)
+        if location != 'Global':
+            forecast.insert(1, 'Lat', confirmed.loc[confirmed['Province/State'] == location, 'Lat'].item())
+            forecast.insert(2, 'Long', confirmed.loc[confirmed['Province/State'] == location, 'Long'].item())
+        else:
+            forecast.insert(1, 'Lat', None)
+            forecast.insert(2, 'Long', None)
+        fs = fs.append(forecast)
+        print(len(fs))
+
+    fig = generate_map(fs.iloc[:-1])
+    fig.write_html('templates/fig.html')
+
+
 # from https://stackoverflow.com/questions/11130156/suppress-stdout-stderr-print-from-python-functions
 class suppress_stdout_stderr(object):
     '''
@@ -123,34 +161,3 @@ class suppress_stdout_stderr(object):
         # Close the null files
         os.close(self.null_fds[0])
         os.close(self.null_fds[1])
-
-
-if __name__ == "__main__":
-    confirmed = pd.read_csv('time_series_19-covid-Confirmed.csv')
-    deaths = pd.read_csv('time_series_19-covid-Deaths.csv')
-    recovered = pd.read_csv('time_series_19-covid-Recovered.csv')
-
-    for df in [confirmed, deaths, recovered]:
-        df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
-
-    (conf, death, recs) = prepare_data()
-    fs = pd.DataFrame()
-
-    for (location, df) in conf.items():
-        forecast = predict_n_days(7, df)
-        forecast[['ds', 'yhat']][-7:]
-        forecast = forecast[['ds', 'yhat']][-7:].T
-        forecast.columns = map(lambda t: t.strftime('%-m/%-d/%y'), forecast.iloc[0])
-        forecast = forecast.drop(forecast.index[0])
-        forecast.insert(0, 'Location', location)
-        if location != 'Global':
-            forecast.insert(1, 'Lat', confirmed.loc[confirmed['Province/State'] == location, 'Lat'].item())
-            forecast.insert(2, 'Long', confirmed.loc[confirmed['Province/State'] == location, 'Long'].item())
-        else:
-            forecast.insert(1, 'Lat', None)
-            forecast.insert(2, 'Long', None)
-        fs = fs.append(forecast)
-        print(len(fs))
-
-    fig = generate_map(fs.iloc[:-1])
-    fig.show()
