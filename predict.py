@@ -39,7 +39,7 @@ def prepare_data(confirmed, deaths, recovered):
 
 def predict_n_days(n, df):
     with suppress_stdout_stderr():
-        m = Prophet(daily_seasonality=True)
+        m = Prophet(changepoint_prior_scale=0.5)
         m.fit(df)
     future = m.make_future_dataframe(periods=n)
     forecast = m.predict(future)
@@ -58,13 +58,10 @@ def generate_map(df, curr=False):
         for date in dates:
             Lat = df.loc[df["Location"] == place, "Lat"]
             Long = df.loc[df["Location"] == place, "Long"]
-            number = df.loc[df["Location"] == place, date].item()
-            text = "Number of cases: " + \
-                str(df.loc[df["Location"] == place,
-                           date].item()) + " in " + str(place)
+            number = int(np.ceil(df.loc[df["Location"] == place, date].item()))
+            text = "Number of cases: " + str(number) + " in " +  str(place)
             case = int(df.loc[df["Location"] == place, date].item())
-            size = (np.log(
-                int(df.loc[df["Location"] == place, date].item()))/np.log(1e15))*500
+            size = (np.log(int(df.loc[df["Location"] == place, date].item()))/np.log(1e15))*500
             if (np.isinf(size)):
                 size = 0
             if (number < 3):
@@ -88,7 +85,7 @@ def generate_map(df, curr=False):
             df2 = df2.append(temp)
     fig = px.scatter_geo(df2, lat="Lat", lon="Long", color="Color",
                          hover_name="Text", size=(list(df2["Size"])),
-                         hover_data=['Date'],
+                         animation_frame="Date",
                          text="Text",
                          labels={},
                          locationmode='country names')
@@ -100,9 +97,9 @@ def generate_map(df, curr=False):
 
 
 def refresh(ref_type):
-    confirmed = pd.read_csv('today.csv')
-    deaths = pd.read_csv('today.csv')
-    recovered = pd.read_csv('today.csv')
+    confirmed = pd.read_csv(c_url)
+    deaths = pd.read_csv(d_url)
+    recovered = pd.read_csv(r_url)
 
     for df in [confirmed, deaths, recovered]:
         df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
