@@ -52,7 +52,8 @@ def generate_map(df, curr=False):
         dates = newDF.columns[4:]
     else:
         dates = newDF.columns[3:]
-    df2 = pd.DataFrame(columns=['Place', 'Lat', 'Long', 'Date', 'Size', 'Text', 'Color'])
+
+    df2 = pd.DataFrame(columns=['Place', 'Lat', 'Long', 'Date', 'Size', 'Cases', 'Text', 'Color'])
     for place in newDF["Location"].unique():
         for date in dates:
             Lat = df.loc[df["Location"] == place, "Lat"]
@@ -61,6 +62,7 @@ def generate_map(df, curr=False):
             text = "Number of cases: " + \
                 str(df.loc[df["Location"] == place,
                            date].item()) + " in " + str(place)
+            case = int(df.loc[df["Location"] == place, date].item())
             size = (np.log(
                 int(df.loc[df["Location"] == place, date].item()))/np.log(1e15))*500
             if (np.isinf(size)):
@@ -80,23 +82,27 @@ def generate_map(df, curr=False):
                                  "Long": int(Long),
                                  "Date": date,
                                  "Size": int(size),
+                                 "Cases": case,
                                  "Text": str(text),
                                  "Color": color})
             df2 = df2.append(temp)
     fig = px.scatter_geo(df2, lat="Lat", lon="Long", color="Color",
-                         hover_name="Place", size=(list(df2["Size"])),
-                         animation_frame="Date",
+                         hover_name="Text", size=(list(df2["Size"])),
+                         hover_data=['Date'],
                          text="Text",
-                         hover_data=["Date"],
-                         locationmode='country names',
-                         projection="natural earth")
+                         labels={},
+                         locationmode='country names')
+
+    fig.update_geos(projection_type="natural earth",
+                    showcountries=True)
+
     return fig
 
 
 def refresh(ref_type):
-    confirmed = pd.read_csv(c_url)
-    deaths = pd.read_csv(d_url)
-    recovered = pd.read_csv(r_url)
+    confirmed = pd.read_csv('today.csv')
+    deaths = pd.read_csv('today.csv')
+    recovered = pd.read_csv('today.csv')
 
     for df in [confirmed, deaths, recovered]:
         df.loc[df["Province/State"].isna(), 'Province/State'] = df.loc[df["Province/State"].isna(), 'Country/Region']
@@ -119,7 +125,7 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
-            print('confirmed, ' + str(len(forecast)))
+            print('confirmed, ' + str(len(fs)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_c.html')
     elif ref_type == 'deaths':
@@ -140,7 +146,7 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
-            print('deaths, ' + str(len(forecast)))
+            print('deaths, ' + str(len(fs)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_d.html')
     elif ref_type == 'recovered':
@@ -161,7 +167,7 @@ def refresh(ref_type):
                 forecast.insert(1, 'Lat', None)
                 forecast.insert(2, 'Long', None)
             fs = fs.append(forecast)
-            print('recovered, ' + str(len(forecast)))
+            print('recovered, ' + str(len(fs)))
         fig = generate_map(fs.iloc[:-1])
         fig.write_html('templates/fig_r.html')
     elif ref_type == 'curr_confirmed':
